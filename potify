@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+use strict;
+# potify - Inotify-based filesystem event watcher
+# Copyright (C) 2010 Magnus Woldrich <trapd00r@trapd00r.se
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+########################################################################
+use Linux::Inotify2;
+use Data::Dumper;
+
+my $inotify = Linux::Inotify2->new;
+my $file = shift or die "Need file to watch";
+
+$inotify->watch($file, IN_MODIFY) or die;
+
+my %inotifyEvents = (
+  '1'          => 'IN_ACCESS',
+  '2'          => 'IN_MODIFY',
+  '4'          => 'IN_ATTRIB',
+  '8'          => 'IN_CLOSE_WRITE',
+  '16'         => 'IN_CLOSE_NOWRITE',
+  '32'         => 'IN_OPEN',
+  '64'         => 'IN_MOVED_FROM',
+  '128'        => 'IN_MOVED_TO',
+  '256'        => 'IN_CREATE',
+  '512'        => 'IN_DELETE',       # subfile was deleted
+  '1024'       => 'IN_DELETE_SELF',  # self/dir was deleted
+  '2048'       => 'IN_MOVE_SELF',
+  '8192'       => 'IN_UNMOUNT',      # fs was unmounted
+  '16384'      => 'IN_O_OVERFLOW',   # Even queued overflowed
+  '32768'      => 'IN_IGNORED',      # file was ignored
+);
+# 2147483648
+
+open(my $origFile, '<', $file) or die "Cannot open $file for reading: $!";
+my @origFileData = <$origFile>;
+close $origFile;
+
+
+while(my @events = $inotify->read) {
+  unless(@events > 0) {
+    print "Read error: $!\n";
+    last;
+  }
+
+  foreach my $event(@events) {
+    if($inotifyEvents{$event->mask} eq 'IN_MODIFY') {
+      open(my $fh, '<', $file) or die "$file changed but can not open it: $!";
+      my @content = <$fh>;
+      close $fh;
+      my @diff;
+      for(my $i=0;$i<@content;$i++) {
+        if($content[$i] ne $origFileData[$i] or !$origFileData[$i]) {
+          print $content[$i];
+        }
+      }
+    }
+  }
+}
