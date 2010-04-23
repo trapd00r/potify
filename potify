@@ -25,21 +25,23 @@ my $file = shift or die "Need file to watch";
 $inotify->watch($file, IN_MODIFY) or die;
 
 my %inotifyEvents = (
-  '1'          => 'IN_ACCESS',
-  '2'          => 'IN_MODIFY',
-  '4'          => 'IN_ATTRIB',
-  '8'          => 'IN_CLOSE_WRITE',
-  '16'         => 'IN_CLOSE_NOWRITE',
-  '32'         => 'IN_OPEN',
-  '64'         => 'IN_MOVED_FROM',
-  '128'        => 'IN_MOVED_TO',
-  '256'        => 'IN_CREATE',
+  '1'          => 'IN_ACCESS',       # file was accessed
+  '2'          => 'IN_MODIFY',       # file was modified
+  '4'          => 'IN_ATTRIB',       # metadata has changed
+  '8'          => 'IN_CLOSE_WRITE',  # writeable file was closed
+  '16'         => 'IN_CLOSE_NOWRITE',# unwriteable file was closed
+  '32'         => 'IN_OPEN',         # file was opened
+  '64'         => 'IN_MOVED_FROM',   # file was moved from X
+  '128'        => 'IN_MOVED_TO',     # file was moved to Y
+  '256'        => 'IN_CREATE',       # subfile was created
   '512'        => 'IN_DELETE',       # subfile was deleted
   '1024'       => 'IN_DELETE_SELF',  # self/dir was deleted
-  '2048'       => 'IN_MOVE_SELF',
+  '2048'       => 'IN_MOVE_SELF',    # self was moved
   '8192'       => 'IN_UNMOUNT',      # fs was unmounted
   '16384'      => 'IN_O_OVERFLOW',   # Even queued overflowed
   '32768'      => 'IN_IGNORED',      # file was ignored
+  '1073741824' => 'IN_ISDIR',        # event occurred against dir
+
 );
 # 2147483648
 
