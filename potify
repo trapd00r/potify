@@ -18,9 +18,21 @@ use strict;
 ########################################################################
 use Linux::Inotify2;
 use Data::Dumper;
+use Getopt::Long;
 
+our($optColor);
+GetOptions(color  => \$optColor);
 my $inotify = Linux::Inotify2->new;
 my $file = shift or die "Need file to watch";
+
+my $noColor = "\033[0m";
+my @colors;
+for(my $i=0;$i<256;$i++) {
+  push(@colors, "\033[38;5;$i"."m");
+}
+open(my $origFile, '<', $file) or die $!;
+my @originalData = <$origFile>;
+close($origFile);
 
 $inotify->watch($file, IN_MODIFY) or die;
 
@@ -45,26 +57,22 @@ my %inotifyEvents = (
 );
 # 2147483648
 
-open(my $origFile, '<', $file) or die "Cannot open $file for reading: $!";
-my @origFileData = <$origFile>;
-close $origFile;
-
-
-while(my @events = $inotify->read) {
+while(1) {#my @events = $inotify->read) {
+  my @events = $inotify->read;
   unless(@events > 0) {
     print "Read error: $!\n";
     last;
   }
-
+  
   foreach my $event(@events) {
     if($inotifyEvents{$event->mask} eq 'IN_MODIFY') {
       open(my $fh, '<', $file) or die "$file changed but can not open it: $!";
       my @content = <$fh>;
       close $fh;
-      my @diff;
-      for(my $i=0;$i<@content;$i++) {
-        if($content[$i] ne $origFileData[$i] or !$origFileData[$i]) {
+      for(my $i=0; $i < @content; ++$i) {
+        if($content[$i] ne $originalData[$i] or !$originalData[$i]) {
           print $content[$i];
+          @originalData = @content; # important!! :)
         }
       }
     }
