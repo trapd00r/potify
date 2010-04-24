@@ -20,16 +20,14 @@ use Linux::Inotify2;
 use Data::Dumper;
 use Getopt::Long;
 
-our($optColor);
-GetOptions(color  => \$optColor);
+our($optEvent);
+GetOptions('event:s'   =>  \$optEvent);
+$optEvent = 'IN_'.uc($optEvent) if $optEvent;
+
+
 my $inotify = Linux::Inotify2->new;
 my $file = shift or die "Need file to watch";
 
-my $noColor = "\033[0m";
-my @colors;
-for(my $i=0;$i<256;$i++) {
-  push(@colors, "\033[38;5;$i"."m");
-}
 open(my $origFile, '<', $file) or die $!;
 my @originalData = <$origFile>;
 close($origFile);
@@ -55,7 +53,6 @@ my %inotifyEvents = (
   '1073741824' => 'IN_ISDIR',        # event occurred against dir
 
 );
-# 2147483648
 
 while(1) {#my @events = $inotify->read) {
   my @events = $inotify->read;
