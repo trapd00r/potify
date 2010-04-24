@@ -55,6 +55,7 @@ my %inotifyEvents = (
 );
 
 while(1) {#my @events = $inotify->read) {
+  print "Following started watch on $file\n";
   my @events = $inotify->read;
   unless(@events > 0) {
     print "Read error: $!\n";
